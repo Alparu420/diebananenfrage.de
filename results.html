@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting Results</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 200px;
+        }
+
+        .stat-box h2 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .stat-box p {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 40px;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        button.secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        button.secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .vote-breakdown {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+
+        .vote-breakdown h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .vote-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .vote-item:last-child {
+            border-bottom: none;
+        }
+
+        .vote-label {
+            font-weight: bold;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .vote-label img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+
+        .vote-count {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .top-banana-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Voting Results 📊</h1>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Loading results...</p>
+        </div>
+
+        <div id="resultsContent" style="display: none;">
+            <div class="stats">
+                <div class="stat-box">
+                    <h2 id="totalVotes">0</h2>
+                    <p>Total Votes</p>
+                </div>
+                <div class="stat-box">
+                    <h2 id="topBanana">-</h2>
+                    <p>Most Popular Banana</p>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="votesChart"></canvas>
+            </div>
+
+            <div class="vote-breakdown">
+                <h3>Vote Breakdown</h3>
+                <div id="voteList"></div>
+            </div>
+
+            <div class="buttons">
+                <button class="secondary" onclick="location.reload()">🔄 Refresh Results</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let chart = null;
+
+        async function loadResults() {
+            try {
+                const response = await fetch('/api/votes');
+                const data = await response.json();
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('resultsContent').style.display = 'block';
+
+                displayResults(data.votes, data.total);
+            } catch (error) {
+                console.error('Error loading results:', error);
+                document.getElementById('loading').innerHTML = '<p>Error loading results. Please refresh the page.</p>';
+            }
+        }
+
+        function displayResults(votes, total) {
+            // Update total votes
+            document.getElementById('totalVotes').textContent = total;
+
+            // Find top banana
+            const maxVotes = Math.max(...votes);
+            const topBananaIndex = votes.indexOf(maxVotes);
+            const topBananaNumber = topBananaIndex + 1;
+            document.getElementById('topBanana').innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <img src="banane-${topBananaNumber}.png" alt="Banana ${topBananaNumber}" class="top-banana-image">
+                    <span style="font-size: 0.6em; margin-top: 5px;">Banana ${topBananaNumber}</span>
+                </div>
+            `;
+
+            // Create vote breakdown
+            const voteList = document.getElementById('voteList');
+            voteList.innerHTML = '';
+            votes.forEach((count, index) => {
+                const banana = index + 1;
+                const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+                const item = document.createElement('div');
+                item.className = 'vote-item';
+                item.innerHTML = `
+                    <span class="vote-label">
+                        <img src="banane-${banana}.png" alt="Banana ${banana}">
+                        <span>Banana ${banana}</span>
+                    </span>
+                    <span class="vote-count">${count} votes (${percentage}%)</span>
+                `;
+                voteList.appendChild(item);
+            });
+
+            // Create chart
+            createChart(votes);
+        }
+
+        function createChart(votes) {
+            const ctx = document.getElementById('votesChart').getContext('2d');
+
+            if (chart) {
+                chart.destroy();
+            }
+
+            const colors = [
+                'rgba(102, 126, 234, 0.8)',
+                'rgba(118, 75, 162, 0.8)',
+                'rgba(244, 143, 177, 0.8)',
+                'rgba(255, 152, 0, 0.8)',
+                'rgba(76, 175, 80, 0.8)',
+                'rgba(33, 150, 243, 0.8)'
+            ];
+
+            // Create custom labels with banana numbers instead of text
+            const bananaLabels = ['', '', '', '', '', ''].map((_, i) => `Image ${i + 1}`);
+
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Banana 1', 'Banana 2', 'Banana 3', 'Banana 4', 'Banana 5', 'Banana 6'],
+                    datasets: [{
+                        label: 'Number of Votes',
+                        data: votes,
+                        backgroundColor: colors,
+                        borderColor: colors.map(c => c.replace('0.8', '1')),
+                        borderWidth: 2,
+                        borderRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    const bananaNumber = context[0].dataIndex + 1;
+                                    return `Banana ${bananaNumber}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1,
+                                font: {
+                                    size: 12
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Load results on page load
+        document.addEventListener('DOMContentLoaded', loadResults);
+
+        // Auto-refresh every 5 seconds
+        setInterval(loadResults, 5000);
+    </script>
+</body>
+</html>
