@@ -1,9 +1,4 @@
-__pycache__/
-*.py[cod]
-*$py.class
-venv/
-env/
+node_modules/
 banana_votes.db
 .DS_Store
 *.log
-.env
