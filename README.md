@@ -12,14 +12,14 @@ A fun interactive website where users vote on their favorite banana images!
 
 ## Setup Instructions
 
-### 1. Install Node.js dependencies
+### 1. Install Python dependencies
 ```bash
-npm install
+pip install -r requirements.txt
 ```
 
 ### 2. Start the server
 ```bash
-npm start
+python app.py
 ```
 
 The website will be available at: **http://localhost:3000**
@@ -37,7 +37,7 @@ The website will be available at: **http://localhost:3000**
 - Shows which banana is the most popular
 - Vote breakdown with percentages
 - Auto-refreshes every 5 seconds
-- Provides buttons to vote again or refresh results
+- Provides buttons to refresh results
 
 ### Vote Storage
 Votes are stored in a lightweight SQLite database (`banana_votes.db`) with a simple schema:
@@ -49,10 +49,10 @@ Table: votes
 
 ## Technology Stack
 
-- **Backend**: Express.js (Node.js)
+- **Backend**: Flask (Python)
 - **Frontend**: HTML5, CSS3, JavaScript
 - **Charts**: Chart.js
-- **Database**: SQLite (sql.js - pure JavaScript, no native dependencies)
+- **Database**: SQLite
 
 ## API Endpoints
 
@@ -67,10 +67,10 @@ Get current vote counts
 
 ## Files
 
-- `server.js` - Express server and API endpoints
+- `app.py` - Flask server and API endpoints
 - `index.html` - Voting page
 - `results.html` - Results page with bar chart
-- `package.json` - Node.js project configuration
+- `requirements.txt` - Python dependencies
 - `banana_votes.db` - SQLite database storing vote counts (auto-created)
 - `banane-1.png` through `banane-6.png` - Banana images
 
